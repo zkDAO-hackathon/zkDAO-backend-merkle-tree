@@ -20,7 +20,7 @@ import { VoterSnapshot } from '@/models/vote-snapshot.model'
 @Injectable()
 export class MerkleTreeService {
 	async generateMerkleTrees(proposals: Proposal[]): Promise<{
-		merkleTrees: string
+		merkleRoots: string
 	}> {
 		try {
 			const client = createPublicClient({
@@ -94,10 +94,8 @@ export class MerkleTreeService {
 
 			const rootsString = concatenateRootsWithESeparator(merkleTrees)
 
-			console.log('Merkle Trees Roots:', rootsString)
-
 			return {
-				merkleTrees: rootsString
+				merkleRoots: rootsString
 			}
 		} catch (error) {
 			throw new InternalServerErrorException(
