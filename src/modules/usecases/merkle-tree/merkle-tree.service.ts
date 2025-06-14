@@ -80,7 +80,7 @@ export class MerkleTreeService {
 					}
 				}
 
-				// TODO: save root ad voterData
+				// TODO: save root and voterData in the database (IPFS)
 				const { root } = generateSnapshotMerkleTree(allVoters)
 
 				merkleTrees.push({
@@ -92,6 +92,7 @@ export class MerkleTreeService {
 				})
 			}
 
+			// TODO: return IPFS hash of the Merkle Trees
 			const rootsString = concatenateRootsWithESeparator(merkleTrees)
 
 			return {
