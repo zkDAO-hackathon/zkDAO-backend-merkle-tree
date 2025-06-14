@@ -1,3 +1,3 @@
 export const environments = {
-	dev: '.env.dev'
+	dev: '.env'
 }
