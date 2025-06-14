@@ -2,7 +2,6 @@ import { addDoc, collection, getDocs, query, where } from 'firebase/firestore'
 import { Firestore } from 'firebase/firestore'
 import { Address, getAddress, Hex } from 'viem'
 
-import { handleKnownErrors } from '@/generic/helpers/handle-known-errors'
 import { MerkleTree } from '@/models/merkle-tree.model'
 import { Voter } from '@/models/voter.model'
 
@@ -57,18 +56,38 @@ export class MerkleTreeCollection {
 			}
 		} catch (error) {
 			console.error('❌', error)
-			handleKnownErrors(error)
+			return undefined
+		}
+	}
+
+	async getMerkleTrees(dao: Address): Promise<MerkleTree[]> {
+		try {
+			const q = query(this.collectionRef, where('dao', '==', dao))
+			const querySnapshot = await getDocs(q)
+
+			if (querySnapshot.empty) return []
+
+			return querySnapshot.docs.map(doc => {
+				const data = doc.data() as MerkleTree
+				return {
+					...data,
+					id: doc.id
+				}
+			})
+		} catch (error) {
+			console.error('❌', error)
+			return []
 		}
 	}
 
 	//  POST
 	async saveMerkleTree(data: MerkleTree): Promise<string | undefined> {
 		try {
-			const docRef = await addDoc(this.collectionRef, { data })
+			const docRef = await addDoc(this.collectionRef, data)
 			return docRef.id
 		} catch (error) {
 			console.error('❌', error)
-			handleKnownErrors(error)
+			return undefined
 		}
 	}
 }

@@ -39,6 +39,10 @@ export class MerkleTreeService {
 		return this.merkleTreeCollection.getMerkleProof(dao, proposalId, address)
 	}
 
+	async getMerkleTrees(dao: Address): Promise<MerkleTree[]> {
+		return this.merkleTreeCollection.getMerkleTrees(dao)
+	}
+
 	async generateMerkleTrees(proposals: Proposal[]): Promise<{
 		cids: string
 	}> {
