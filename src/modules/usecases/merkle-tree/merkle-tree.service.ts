@@ -1,10 +1,15 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common'
+import {
+	Inject,
+	Injectable,
+	InternalServerErrorException
+} from '@nestjs/common'
 import { randomBytes } from 'crypto'
-import { MerkleTree } from 'merkletreejs'
+import { MerkleTree as MerkleTreeJs } from 'merkletreejs'
 import { poseidon2, poseidon3 } from 'poseidon-lite'
 import {
 	Address,
 	createPublicClient,
+	Hex,
 	hexToBigInt,
 	http,
 	parseAbiItem
@@ -13,13 +18,26 @@ import { toHex } from 'viem'
 
 import { GovernorTokenABI } from '@/assets/abis/governor.abi'
 import { localhost } from '@/config/viem.config'
+import { MerkleTree } from '@/models/merkle-tree.model'
 import { Proposal } from '@/models/proposal.model'
-import { VoterSnapshot } from '@/models/vote-snapshot.model'
+import { Voter } from '@/models/voter.model'
+import { MerkleTreeCollection } from '@/modules/globals/databases/firebase/collections/merkle-tree/merkle-tree.collection'
+import { Firebase } from '@/modules/globals/databases/firebase/firebase.database'
 
 @Injectable()
 export class MerkleTreeService {
-	// 4. TODO: implement getMerkleProof method
-	async getMerkleProof(dao: Address, proposalId: string, address: Address) {}
+	private readonly merkleTreeCollection: MerkleTreeCollection
+
+	constructor(
+		@Inject('Firebase')
+		private readonly firebase: Firebase
+	) {
+		this.merkleTreeCollection = new MerkleTreeCollection(this.firebase.getDb())
+	}
+
+	async getMerkleProof(dao: Address, proposalId: Hex, address: Address) {
+		return this.merkleTreeCollection.getMerkleProof(dao, proposalId, address)
+	}
 
 	async generateMerkleTrees(proposals: Proposal[]): Promise<{
 		cids: string
@@ -77,20 +95,17 @@ export class MerkleTreeService {
 				}
 
 				// 1.) TODO: save root in IPFS
-				const { root, voterData } = generateSnapshotMerkleTree(allVoters)
+				const { root, votersData } = generateSnapshotMerkleTree(allVoters)
 
-				// 2.) TODO: save merkle tree data in database
-				const merkleTreeData = {
+				const merkleTreeData: MerkleTree = {
 					dao: proposal.dao,
 					proposalId: proposal.proposalId,
-					voterData,
+					voters: votersData,
 					root
 				}
 
-				console.dir(merkleTreeData, {
-					depth: null,
-					colors: true
-				})
+				// 2.) TODO: handle Errors
+				await this.merkleTreeCollection.saveMerkleTree(merkleTreeData)
 
 				// 3.) TODO: push Merkle Tree CID
 				merkleTrees.push(root)
@@ -114,7 +129,7 @@ export function generateSnapshotMerkleTree(
 	voters: { address: Address; weight: bigint; proposalId: bigint }[]
 ) {
 	const leaves: string[] = []
-	const voterData: VoterSnapshot[] = []
+	const votersData: Voter[] = []
 
 	for (const { address, weight, proposalId } of voters) {
 		const secretHex = '0x' + randomBytes(32).toString('hex')
@@ -129,9 +144,9 @@ export function generateSnapshotMerkleTree(
 
 		leaves.push(hexLeaf)
 
-		voterData.push({
+		votersData.push({
 			address,
-			weight,
+			weight: Number(weight),
 			secret: secretHex,
 			nullifier: toHex(nullifier, { size: 32 }),
 			leaf: hexLeaf,
@@ -140,20 +155,20 @@ export function generateSnapshotMerkleTree(
 		})
 	}
 
-	const tree = new MerkleTree(leaves, x => x, { sortPairs: true })
+	const tree = new MerkleTreeJs(leaves, x => x, { sortPairs: true })
 	const root = tree.getHexRoot()
 
-	for (const voter of voterData) {
-		const proof = tree.getProof(voter.leaf)
-		const index = tree.getLeafIndex(Buffer.from(voter.leaf.slice(2), 'hex'))
+	for (const voterData of votersData) {
+		const proof = tree.getProof(voterData.leaf)
+		const index = tree.getLeafIndex(Buffer.from(voterData.leaf.slice(2), 'hex'))
 
-		voter.index = index
-		voter.path = proof.map(proof => '0x' + proof.data.toString('hex'))
+		voterData.index = index
+		voterData.path = proof.map(proof => '0x' + proof.data.toString('hex'))
 	}
 
 	return {
 		root,
-		voterData
+		votersData
 	}
 }
 
