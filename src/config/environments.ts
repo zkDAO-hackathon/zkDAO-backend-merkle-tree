@@ -1,3 +1,4 @@
 export const environments = {
-	dev: '.env'
+	dev: '.env',
+	ethereumSepolia: '.env.ethereumSepolia'
 }
