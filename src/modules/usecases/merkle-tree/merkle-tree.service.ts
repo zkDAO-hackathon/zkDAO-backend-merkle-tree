@@ -5,7 +5,6 @@ import { poseidon2, poseidon3 } from 'poseidon-lite'
 import {
 	Address,
 	createPublicClient,
-	Hex,
 	hexToBigInt,
 	http,
 	parseAbiItem
@@ -19,8 +18,11 @@ import { VoterSnapshot } from '@/models/vote-snapshot.model'
 
 @Injectable()
 export class MerkleTreeService {
+	// 4. TODO: implement getMerkleProof method
+	async getMerkleProof(dao: Address, proposalId: string, address: Address) {}
+
 	async generateMerkleTrees(proposals: Proposal[]): Promise<{
-		merkleRoots: string
+		cids: string
 	}> {
 		try {
 			const client = createPublicClient({
@@ -34,13 +36,7 @@ export class MerkleTreeService {
 				proposalId: bigint
 			}[] = []
 
-			const merkleTrees: {
-				dao: Address
-				daoId: bigint
-				proposalId: Hex
-				snapshot: bigint
-				root: string
-			}[] = []
+			const merkleTrees: string[] = []
 
 			for (const proposal of proposals) {
 				const { snapshot, voteToken, proposalId } = proposal
@@ -80,23 +76,30 @@ export class MerkleTreeService {
 					}
 				}
 
-				// TODO: save root and voterData in the database (IPFS)
-				const { root } = generateSnapshotMerkleTree(allVoters)
+				// 1.) TODO: save root in IPFS
+				const { root, voterData } = generateSnapshotMerkleTree(allVoters)
 
-				merkleTrees.push({
+				// 2.) TODO: save merkle tree data in database
+				const merkleTreeData = {
 					dao: proposal.dao,
-					daoId: proposal.daoId,
 					proposalId: proposal.proposalId,
-					snapshot: proposal.snapshot,
+					voterData,
 					root
+				}
+
+				console.dir(merkleTreeData, {
+					depth: null,
+					colors: true
 				})
+
+				// 3.) TODO: push Merkle Tree CID
+				merkleTrees.push(root)
 			}
 
-			// TODO: return IPFS hash of the Merkle Trees
-			const rootsString = concatenateRootsWithESeparator(merkleTrees)
+			const cidsString = concatenateCIDsWithPipelineSeparator(merkleTrees)
 
 			return {
-				merkleRoots: rootsString
+				cids: cidsString
 			}
 		} catch (error) {
 			throw new InternalServerErrorException(
@@ -154,10 +157,6 @@ export function generateSnapshotMerkleTree(
 	}
 }
 
-function concatenateRootsWithESeparator(
-	merkleTrees: {
-		root: string
-	}[]
-): string {
-	return merkleTrees.map(tree => tree.root).join('e')
+function concatenateCIDsWithPipelineSeparator(cids: string[]): string {
+	return cids.join('|') + '|'
 }
