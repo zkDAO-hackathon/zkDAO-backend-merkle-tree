@@ -6,7 +6,7 @@ import {
 	Post,
 	UseInterceptors
 } from '@nestjs/common'
-import { Address, Hex } from 'viem'
+import { Address, getAddress, Hex } from 'viem'
 
 import { ParseProposalsInterceptor } from '@/interceptors/ParseProposals.interceptor'
 import { MerkleTree } from '@/models/merkle-tree.model'
@@ -20,16 +20,20 @@ export class MerkleTreeController {
 	// GET
 	@Get('getMerkleProofs/:dao')
 	async getMerkleTrees(@Param('dao') dao: Address): Promise<MerkleTree[]> {
-		return await this.merkleTreeService.getMerkleTrees(dao)
+		return await this.merkleTreeService.getMerkleTrees(getAddress(dao))
 	}
 
-	@Get('getMerkleProof/:dao/proposals/:proposalId/:address')
+	@Get('getMerkleProof/:dao/proposals/:proposalId/:voter')
 	async getMerkleProof(
 		@Param('dao') dao: Address,
 		@Param('proposalId') proposalId: Hex,
-		@Param('address') address: Address
+		@Param('voter') voter: Address
 	) {
-		return await this.merkleTreeService.getMerkleProof(dao, proposalId, address)
+		return await this.merkleTreeService.getMerkleProof(
+			getAddress(dao),
+			proposalId,
+			getAddress(voter)
+		)
 	}
 
 	// POST

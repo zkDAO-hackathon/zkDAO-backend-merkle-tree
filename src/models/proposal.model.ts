@@ -1,4 +1,4 @@
-import { Address, Hex } from 'viem'
+import { Address, getAddress, Hex } from 'viem'
 
 export class Proposal {
 	dao: Address
@@ -16,10 +16,10 @@ export class Proposal {
 			if (key && value) map[key] = value
 		}
 
-		this.dao = map.dao as Address
+		this.dao = getAddress(map.dao)
 		this.daoId = BigInt(map.daoId)
 		this.proposalId = map.proposalId as Hex
 		this.snapshot = BigInt(map.snapshot)
-		this.voteToken = map.voteToken as Address
+		this.voteToken = getAddress(map.voteToken)
 	}
 }

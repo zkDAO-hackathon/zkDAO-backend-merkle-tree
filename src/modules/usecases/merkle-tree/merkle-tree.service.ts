@@ -35,14 +35,16 @@ export class MerkleTreeService {
 		this.merkleTreeCollection = new MerkleTreeCollection(this.firebase.getDb())
 	}
 
-	async getMerkleProof(dao: Address, proposalId: Hex, address: Address) {
-		return this.merkleTreeCollection.getMerkleProof(dao, proposalId, address)
+	// GET
+	async getMerkleProof(dao: Address, proposalId: Hex, voter: Address) {
+		return this.merkleTreeCollection.getMerkleProof(dao, proposalId, voter)
 	}
 
 	async getMerkleTrees(dao: Address): Promise<MerkleTree[]> {
 		return this.merkleTreeCollection.getMerkleTrees(dao)
 	}
 
+	// POST
 	async generateMerkleTrees(proposals: Proposal[]): Promise<{
 		cids: string
 	}> {
@@ -139,7 +141,7 @@ export function generateSnapshotMerkleTree(
 		const secretHex = '0x' + randomBytes(32).toString('hex')
 		const secretBigInt = BigInt(secretHex)
 
-		const nullifier = poseidon2([secretBigInt, proposalId])
+		const nullifier = poseidon2([secretBigInt, weight])
 
 		const addressBigInt = hexToBigInt(address)
 		const leaf = poseidon3([addressBigInt, weight, nullifier])

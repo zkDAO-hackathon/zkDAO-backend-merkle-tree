@@ -27,7 +27,6 @@ async function bootstrap(): Promise<void> {
 		})
 	)
 
-	app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)))
 
 	// TODO: configure CORS
 	app.enableCors({

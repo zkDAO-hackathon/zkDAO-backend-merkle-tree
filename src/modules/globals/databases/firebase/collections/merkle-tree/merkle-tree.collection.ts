@@ -1,6 +1,6 @@
 import { addDoc, collection, getDocs, query, where } from 'firebase/firestore'
 import { Firestore } from 'firebase/firestore'
-import { Address, getAddress, Hex } from 'viem'
+import { Address, Hex } from 'viem'
 
 import { MerkleTree } from '@/models/merkle-tree.model'
 import { Voter } from '@/models/voter.model'
@@ -19,12 +19,12 @@ export class MerkleTreeCollection {
 		address: Address
 	): Promise<
 		| {
-				_secret: string
-				_weight: number
-				_snapshot_merkle_tree: string
-				_leaf: string
-				_index: number
-				_path: string[]
+				secret: string
+				weight: number
+				snapshotMerkleTree: string
+				leaf: string
+				index: number
+				path: string[]
 		  }
 		| undefined
 	> {
@@ -41,18 +41,18 @@ export class MerkleTreeCollection {
 			const merkleTree = querySnapshot.docs[0].data() as MerkleTree
 
 			const voter = merkleTree.voters.find(
-				(voter: Voter) => getAddress(voter.address) === getAddress(address)
+				(voter: Voter) => voter.address === address
 			)
 
 			if (!voter) return undefined
 
 			return {
-				_secret: voter.secret,
-				_weight: voter.weight,
-				_snapshot_merkle_tree: merkleTree.root,
-				_leaf: voter.leaf,
-				_index: voter.index,
-				_path: voter.path
+				secret: voter.secret,
+				weight: voter.weight,
+				snapshotMerkleTree: merkleTree.root,
+				leaf: voter.leaf,
+				index: voter.index,
+				path: voter.path
 			}
 		} catch (error) {
 			console.error('❌', error)
