@@ -12,7 +12,7 @@ import { ParseProposalsInterceptor } from '@/interceptors/ParseProposals.interce
 import { MerkleTree } from '@/models/merkle-tree.model'
 import { Proposal } from '@/models/proposal.model'
 
-import { MerkleTreeService } from './merkle-tree.service'
+import { MerkleTreeService } from '../services/merkle-tree.service'
 
 @Controller('merkle-tree')
 export class MerkleTreeController {
@@ -39,11 +39,13 @@ export class MerkleTreeController {
 	// POST
 	@Post('generate-merkle-trees')
 	@UseInterceptors(ParseProposalsInterceptor)
-	generateMerkleTrees(@Body('proposals') proposals: Proposal[]) {
-		this.merkleTreeService.generateMerkleTrees(proposals)
+	async generateMerkleTrees(@Body('proposals') proposals: Proposal[]) {
+		const cids = this.merkleTreeService.generateMerkleTrees(proposals)
 
 		return Promise.resolve({
-			cids: 'QmXy7Z5g8d9f3b2c4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t'
+			cids: 'https://gateway.lighthouse.storage/ipfs/bafkreidytm7ihribazgxsnnu7jldsuszwletlszo3pjxpqnztntfibpeae|'
 		})
+
+		return cids
 	}
 }

@@ -48,7 +48,7 @@ export class IpfsService {
 		}
 	}
 
-	async storeObject(object: unknown): Promise<string | undefined> {
+	async storeObject(object: unknown): Promise<string> {
 		try {
 			const response = (await lighthouse.uploadText(
 				JSON.stringify(object),
@@ -56,8 +56,7 @@ export class IpfsService {
 			)) as { data: Hash }
 
 			const hash: string = response.data.Hash
-			// return `${this.gateway}/ipfs/${hash}`
-			return 'https://gateway.lighthouse.storage/ipfs/bafkreigkdxsbqz4zal7feh6dygq6374kqmzia2nrrxlpj3c4tx5biodxle'
+			return `${this.gateway}/ipfs/${hash}`
 		} catch (error) {
 			console.error('❌', error)
 			handleKnownErrors(error)

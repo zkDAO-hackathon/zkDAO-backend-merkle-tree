@@ -27,7 +27,7 @@ import {
  * @param error - The error to handle
  */
 
-export function handleKnownErrors(error: any): void {
+export function handleKnownErrors(error: any): never {
 	switch (true) {
 		case error instanceof BadRequestException:
 			throw new BadRequestException(error.message)

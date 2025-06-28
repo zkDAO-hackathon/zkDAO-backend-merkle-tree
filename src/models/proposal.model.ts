@@ -5,6 +5,7 @@ export class Proposal {
 	daoId: bigint
 	proposalId: Hex
 	snapshot: bigint
+	proposalBlock: bigint
 	voteToken: Address
 
 	constructor(data: string) {
@@ -20,6 +21,7 @@ export class Proposal {
 		this.daoId = BigInt(map.daoId)
 		this.proposalId = map.proposalId as Hex
 		this.snapshot = BigInt(map.snapshot)
+		this.proposalBlock = BigInt(map.proposalBlock)
 		this.voteToken = getAddress(map.voteToken)
 	}
 }

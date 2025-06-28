@@ -15,14 +15,16 @@ import {
 	parseAbiItem
 } from 'viem'
 import { toHex } from 'viem'
+import { sepolia } from 'viem/chains'
 
 import { GovernorTokenABI } from '@/assets/abis/governor.abi'
-import { localhost } from '@/config/viem.config'
 import { MerkleTree } from '@/models/merkle-tree.model'
 import { Proposal } from '@/models/proposal.model'
 import { Voter } from '@/models/voter.model'
 import { MerkleTreeCollection } from '@/modules/globals/databases/firebase/collections/merkle-tree/merkle-tree.collection'
 import { Firebase } from '@/modules/globals/databases/firebase/firebase.database'
+
+import { IpfsService } from '../../ipfs/services/ipfs.services'
 
 @Injectable()
 export class MerkleTreeService {
@@ -30,7 +32,8 @@ export class MerkleTreeService {
 
 	constructor(
 		@Inject('Firebase')
-		private readonly firebase: Firebase
+		private readonly firebase: Firebase,
+		private readonly ipfsService: IpfsService
 	) {
 		this.merkleTreeCollection = new MerkleTreeCollection(this.firebase.getDb())
 	}
@@ -50,7 +53,7 @@ export class MerkleTreeService {
 	}> {
 		try {
 			const client = createPublicClient({
-				chain: localhost,
+				chain: sepolia,
 				transport: http()
 			})
 
@@ -63,21 +66,22 @@ export class MerkleTreeService {
 			const merkleTrees: string[] = []
 
 			for (const proposal of proposals) {
-				const { snapshot, voteToken, proposalId } = proposal
+				const { snapshot, proposalBlock, voteToken, proposalId } = proposal
 
 				const governorToken = {
 					address: voteToken,
 					abi: GovernorTokenABI
 				}
 
-				// TODO: improve this by using a more efficient way to get all voters
+				const snapshotBlock = await getBlockNumberByTimestamp(snapshot)
+
 				const logs = await client.getLogs({
 					address: voteToken,
 					event: parseAbiItem(
 						'event DelegateChanged(address indexed delegator, address indexed fromDelegate, address indexed toDelegate)'
 					),
-					fromBlock: 0n,
-					toBlock: snapshot
+					fromBlock: proposalBlock,
+					toBlock: snapshotBlock
 				})
 
 				const delegates = [
@@ -113,8 +117,13 @@ export class MerkleTreeService {
 				// 2.) TODO: handle Errors
 				await this.merkleTreeCollection.saveMerkleTree(merkleTreeData)
 
-				// 3.) TODO: push Merkle Tree CID
-				merkleTrees.push(root)
+				const rootCID = await this.ipfsService.storeObject(merkleTreeData)
+
+				console.log(
+					`Merkle Tree CID for proposal ${proposal.proposalId}: ${rootCID}`
+				)
+
+				merkleTrees.push(rootCID)
 			}
 
 			const cidsString = concatenateCIDsWithPipelineSeparator(merkleTrees)
@@ -180,4 +189,15 @@ export function generateSnapshotMerkleTree(
 
 function concatenateCIDsWithPipelineSeparator(cids: string[]): string {
 	return cids.join('|') + '|'
+}
+
+async function getBlockNumberByTimestamp(timestamp: bigint): Promise<bigint> {
+	const timestampString = timestamp.toString()
+	const response = await fetch(
+		`https://api-sepolia.etherscan.io/api?module=block&action=getblocknobytime&timestamp=${timestampString}&closest=before&apikey=KCMQQAD17EZIBQ2PH7QKQ2H2J9TVIRFP1T`
+	)
+
+	const data = await response.json()
+	const snapshotBlock = BigInt(data.result)
+	return snapshotBlock
 }
