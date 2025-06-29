@@ -40,12 +40,10 @@ export class MerkleTreeController {
 	@Post('generate-merkle-trees')
 	@UseInterceptors(ParseProposalsInterceptor)
 	async generateMerkleTrees(@Body('proposals') proposals: Proposal[]) {
-		const cids = this.merkleTreeService.generateMerkleTrees(proposals)
+		this.merkleTreeService.generateMerkleTrees(proposals)
 
 		return Promise.resolve({
-			cids: 'https://gateway.lighthouse.storage/ipfs/bafkreidytm7ihribazgxsnnu7jldsuszwletlszo3pjxpqnztntfibpeae|'
+			cids: 'bafkreidytm7ihribazgxsnnu7jldsuszwletlszo3pjxpqnztntfibpeae|'
 		})
-
-		return cids
 	}
 }

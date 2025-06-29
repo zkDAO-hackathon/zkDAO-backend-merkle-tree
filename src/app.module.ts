@@ -25,6 +25,7 @@ import { MerkleTreeModule } from '@/modules/usecases/merkle-tree/merkle-tree.mod
 				FIREBASE_STORAGE_BUCKET: Joi.string().required(),
 				FIREBASE_MESSAGING_SENDER_ID: Joi.string().required(),
 				FIREBASE_APP_ID: Joi.string().required(),
+				SCAN_API_KEY: Joi.string().required(),
 				LIGHTHOUSE_API_KEY: Joi.string().required(),
 				LIGHTHOUSE_GATEWAY: Joi.string().required(),
 				WALLET_PRIVATE_KEY: Joi.string().required(),

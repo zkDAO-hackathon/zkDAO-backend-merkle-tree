@@ -23,6 +23,7 @@ import { Proposal } from '@/models/proposal.model'
 import { Voter } from '@/models/voter.model'
 import { MerkleTreeCollection } from '@/modules/globals/databases/firebase/collections/merkle-tree/merkle-tree.collection'
 import { Firebase } from '@/modules/globals/databases/firebase/firebase.database'
+import { ScanClient } from '@/modules/globals/web3/clients/scan.module'
 
 import { IpfsService } from '../../ipfs/services/ipfs.services'
 
@@ -33,6 +34,7 @@ export class MerkleTreeService {
 	constructor(
 		@Inject('Firebase')
 		private readonly firebase: Firebase,
+		@Inject('ScanClient') private scanClient: ScanClient,
 		private readonly ipfsService: IpfsService
 	) {
 		this.merkleTreeCollection = new MerkleTreeCollection(this.firebase.getDb())
@@ -73,7 +75,10 @@ export class MerkleTreeService {
 					abi: GovernorTokenABI
 				}
 
-				const snapshotBlock = await getBlockNumberByTimestamp(snapshot)
+				const snapshotBlock = await getBlockNumberByTimestamp(
+					this.scanClient.getApiKey(),
+					snapshot
+				)
 
 				const logs = await client.getLogs({
 					address: voteToken,
@@ -104,7 +109,6 @@ export class MerkleTreeService {
 					}
 				}
 
-				// 1.) TODO: save root in IPFS
 				const { root, votersData } = generateSnapshotMerkleTree(allVoters)
 
 				const merkleTreeData: MerkleTree = {
@@ -114,13 +118,12 @@ export class MerkleTreeService {
 					root
 				}
 
-				// 2.) TODO: handle Errors
 				await this.merkleTreeCollection.saveMerkleTree(merkleTreeData)
 
 				const rootCID = await this.ipfsService.storeObject(merkleTreeData)
 
 				console.log(
-					`Merkle Tree CID for proposal ${proposal.proposalId}: ${rootCID}`
+					`🌳 Merkle Tree CID for proposal ${proposal.proposalId}: ${rootCID}`
 				)
 
 				merkleTrees.push(rootCID)
@@ -191,10 +194,13 @@ function concatenateCIDsWithPipelineSeparator(cids: string[]): string {
 	return cids.join('|') + '|'
 }
 
-async function getBlockNumberByTimestamp(timestamp: bigint): Promise<bigint> {
+async function getBlockNumberByTimestamp(
+	apiKey: string,
+	timestamp: bigint
+): Promise<bigint> {
 	const timestampString = timestamp.toString()
 	const response = await fetch(
-		`https://api-sepolia.etherscan.io/api?module=block&action=getblocknobytime&timestamp=${timestampString}&closest=before&apikey=KCMQQAD17EZIBQ2PH7QKQ2H2J9TVIRFP1T`
+		`https://api-sepolia.etherscan.io/api?module=block&action=getblocknobytime&timestamp=${timestampString}&closest=before&apikey=${apiKey}`
 	)
 
 	const data = await response.json()

@@ -11,6 +11,9 @@ export default registerAs('config', () => {
 			messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
 			appId: process.env.FIREBASE_APP_ID
 		},
+		scan: {
+			apiKey: process.env.SCAN_API_KEY
+		},
 		lighthouse: {
 			apiKey: process.env.LIGHTHOUSE_API_KEY,
 			gateway: process.env.LIGHTHOUSE_GATEWAY
